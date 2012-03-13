@@ -103,12 +103,11 @@ namespace xxlua{
     //-----------------------------------------------------------
     //    member function pointer specialization
     //-----------------------------------------------------------
-    template<typename R1, typename ... A1, typename F, std::size_t ... I>
-    struct invoker<R1(A1...), F, mpl::vector_c<std::size_t, I...>, typename std::enable_if<std::is_member_function_pointer<F>::value>::type>
+    template<typename R1, typename ... A1, typename Class, typename M, std::size_t ... I>
+    struct invoker<R1(A1...), M Class::*, mpl::vector_c<std::size_t, I...>, typename std::enable_if<std::is_function<M>::value>::type>
     {
         static int apply(lua_State* L)
         {
-            typedef typename class_of<F>::type Class;
             try{
                 // check argument number
                 static int const max = max_index<I...>::value;
@@ -116,8 +115,8 @@ namespace xxlua{
                 assert(top >= max);
                 if(top < max) throw std::runtime_error("xxlua: bad argument number");
                 
-                auto p = static_cast<std::array<F, 1>*>(lua_touserdata(L, lua_upvalueindex(1)));
-                F memfn = (*p)[0];
+                auto p = static_cast<std::array<M Class::*, 1>*>(lua_touserdata(L, lua_upvalueindex(1)));
+                M Class::*memfn = (*p)[0];
                 auto self = static_cast<Class*>(lua_touserdata(L, 1));
                 R1 r = (self->*memfn)(get_stack<A1>(L, I)...);
                 push_stack(L, r);
@@ -134,12 +133,11 @@ namespace xxlua{
         }
     };
     
-    template<typename ... A1, typename F, std::size_t ... I>
-    struct invoker<void(A1...), F, mpl::vector_c<std::size_t, I...>, typename std::enable_if<std::is_member_function_pointer<F>::value>::type>
+    template<typename ... A1, typename Class, typename M, std::size_t ... I>
+    struct invoker<void(A1...), M Class::*, mpl::vector_c<std::size_t, I...>, typename std::enable_if<std::is_function<M>::value>::type>
     {
         static int apply(lua_State* L)
         {
-            typedef typename class_of<F>::type Class;
             try{
                 // check argument number
                 static int const max = max_index<I...>::value;
@@ -147,8 +145,8 @@ namespace xxlua{
                 assert(top >= max);
                 if(top < max) throw std::runtime_error("xxlua: bad argument number");
                 
-                auto p = static_cast<std::array<F, 1>*>(lua_touserdata(L, lua_upvalueindex(1)));
-                F memfn = (*p)[0];
+                auto p = static_cast<std::array<M Class::*, 1>*>(lua_touserdata(L, lua_upvalueindex(1)));
+                M Class::*memfn = (*p)[0];
                 auto self = static_cast<Class*>(lua_touserdata(L, 1));
                 (self->*memfn)(get_stack<A1>(L, I)...);
             }
